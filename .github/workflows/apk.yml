@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - android-project.zip
+      - '**.zip'
 
 permissions:
   contents: write
@@ -16,7 +16,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Projeyi aç
-        run: unzip -o android-project.zip -d build
+        run: |
+          ZIP=$(find . -maxdepth 2 -iname "*.zip" | head -1)
+          if [ -z "$ZIP" ]; then echo "Depoda zip dosyası yok. android-project.zip dosyasını yükle."; exit 1; fi
+          echo "Kullanılan dosya: $ZIP"
+          unzip -o "$ZIP" -d build
 
       - uses: actions/setup-java@v4
         with:
