@@ -1,0 +1,41 @@
+name: APK oluştur
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - android-project.zip
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Projeyi aç
+        run: unzip -o android-project.zip -d build
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: APK derle
+        working-directory: build/android-project
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: APK dosyasını adlandır
+        run: cp build/android-project/app/build/outputs/apk/release/app-release.apk SinyalMasasi.apk
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Sinyal Masası v${{ github.run_number }}
+          files: SinyalMasasi.apk
