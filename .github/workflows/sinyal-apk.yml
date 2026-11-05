@@ -1,0 +1,33 @@
+name: Sinyal Masasi APK
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Projeyi ac
+        run: |
+          rm -rf kaynak
+          mkdir kaynak
+          unzip -q sinyal-android.zip -d kaynak
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: APK olustur
+        working-directory: kaynak
+        run: gradle assembleRelease --no-daemon --stacktrace
+      - name: APK dosyasini adlandir
+        run: cp kaynak/app/build/outputs/apk/release/app-release.apk SinyalMasasi.apk
+      - name: Releases sayfasina koy
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: sinyal-${{ github.run_number }}
+          name: Sinyal Masasi ${{ github.run_number }}
+          files: SinyalMasasi.apk
