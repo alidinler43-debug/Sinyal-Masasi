@@ -1,0 +1,44 @@
+name: Sinyal Masasi Windows
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: En son yuklenen paketi ac
+        shell: bash
+        run: |
+          best=""; bt=0
+          for f in sinyal-windows*.zip; do
+            [ -e "$f" ] || continue
+            t=$(git log -1 --format=%ct -- "$f")
+            if [ "${t:-0}" -gt "$bt" ]; then bt=$t; best="$f"; fi
+          done
+          echo "Kullanilan paket: $best"
+          [ -n "$best" ] || { echo "HATA: sinyal-windows ile baslayan zip bulunamadi"; exit 1; }
+          rm -rf kaynak
+          mkdir kaynak
+          unzip -q "$best" -d kaynak || 7z x -y -okaynak "$best"
+          test -f kaynak/SinyalMasasi.csproj || { echo "HATA: paket icinde SinyalMasasi.csproj yok"; exit 1; }
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: EXE olustur
+        working-directory: kaynak
+        run: dotnet publish SinyalMasasi.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o ../cikti
+      - name: EXE dosyasini al
+        shell: bash
+        run: cp cikti/SinyalMasasi.exe SinyalMasasi.exe
+      - name: Releases sayfasina koy
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: windows
+          name: Sinyal Masasi Windows
+          body: "Windows 11 surumu. Her calistirmada en yeni SinyalMasasi.exe buraya konur."
+          files: SinyalMasasi.exe
+          make_latest: false
